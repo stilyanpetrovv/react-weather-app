@@ -1,0 +1,49 @@
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%; /* Ensure the full viewport height is used */
+}
+
+.wrapper {
+  display: flex;
+  justify-content: flex-start; /* Align content to the top */
+  align-items: center; /* Keep the content horizontally centered */
+  min-height: 100vh; /* Ensure full viewport height */
+  width: 100%; /* Ensure full width */
+  flex-direction: column;
+  text-align: center;
+  padding-top: 20px; /* Add some space from the top */
+  border: 2px solid red; /* For debugging */
+}
+
+form {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  border: 2px solid blue; /* For debugging */
+}
+
+input {
+  padding: 10px;
+  width: 300px;
+}
+
+button {
+  padding: 10px 20px;
+}
+
+
+.error {
+  color: red;
+  font-size: 14px;
+  margin-top: 10px;
+  text-align: center;
+  font-weight: bold;
+}
+
+.weather-details {
+  margin-top: '10px';
+  text-align: 'center';
+}
