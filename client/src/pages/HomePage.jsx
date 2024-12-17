@@ -1,74 +1,57 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import './HomePage.css';
-
 
 const HomePage = () => {
   const [city, setCity] = useState('');
   const [weather, setWeather] = useState(null);
   const [error, setError] = useState('');
 
-  // Fetch weather data
-  const fetchWeather = async (lat, lon) => {
-    try {
-      const response = await fetch(
-        `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true`
-      );
-      const data = await response.json();
-      if (data.current_weather) {
-        setWeather(data.current_weather);
-      } else {
-        setError('Weather data not available.');
-      }
-    } catch (err) {
-      setError('Failed to fetch weather data.');
-    }
-  };
-
-  // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setWeather(null);
-    setError('');
+
+    if (!city.trim()) {
+      setError('City name cannot be empty!');
+      setWeather(null);
+      return;
+    }
 
     try {
-      const geocodingResponse = await fetch(
-        `https://nominatim.openstreetmap.org/search?city=${city}&format=json`
-      );
-      const geocodingData = await geocodingResponse.json();
+      setError(''); // Clear previous errors
+      setWeather(null); // Reset weather data
 
-      if (!city.trim()) {
-        setError('City name cannot be empty!');
-        return;
-      }
+      const response = await fetch(`http://localhost:3000/api/weather?city=${encodeURIComponent(city)}`);
+      const data = await response.json();
 
-      if (geocodingData.length > 0) {
-        const { lat, lon } = geocodingData[0];
-        fetchWeather(lat, lon);
+      if (response.ok) {
+        setWeather(data);
       } else {
-        setError('City not found.');
+        setError(data.error || 'Something went wrong. Please try again.');
       }
     } catch (err) {
-      setError('Failed to fetch city coordinates.');
+      console.error('Error fetching weather data:', err);
+      setError('Failed to connect to the server. Please try again.');
     }
   };
 
   return (
     <div className="wrapper">
-      <h2>Weather App</h2>
+      <h1>Weather App</h1>
       <form onSubmit={handleSubmit}>
         <input
           type="text"
+          placeholder="Enter city name"
           value={city}
           onChange={(e) => setCity(e.target.value)}
-          placeholder="Enter city name"
         />
-      {error && <p className="error">{error}</p>}
-      <button type="submit">Get Weather</button>
+        <button type="submit">Get Weather</button>
       </form>
+
+      {error && <div className="error">{error}</div>}
 
       {weather && (
         <div className="weather-details">
           <h3>Weather Details:</h3>
+          <p>City: {weather.city}</p>
           <p>Temperature: {weather.temperature}°C</p>
           <p>Windspeed: {weather.windspeed} km/h</p>
           <p>Weather Code: {weather.weathercode}</p>
