@@ -2,8 +2,10 @@ import { Hono } from 'hono';
 import { serve } from '@hono/node-server';
 import { cors } from 'hono/cors'
 import fetch from "node-fetch";
+import NodeCache from 'node-cache';
 
 const app = new Hono();
+const weatherCache = new NodeCache({ stdTTL: 60 }); // Cache TTL of 1 minute (60 seconds)
 
 app.use('*', cors({
   origin: 'http://localhost:5173',
@@ -14,32 +16,24 @@ app.use('*', cors({
   credentials: true,
 }))
 
-const cache = new Map();
-const CACHE_EXPIRATION = 10 * 60 * 1000 // 10 minutes in milliseconds
-
 app.get('/api/weather', async (c) => {
-  const city = c.req.query("city");
+  const city = c.req.query("city")?.trim().toLocaleLowerCase();
 
   // Input validation
   if (!city || city.trim() === "") {
     return c.json({ error : "City name cannot be empty!" }, 400);
   }
 
-  try {
-    // cache check first
-    if (cache.has(city)) {
-      const { data, timestamp } = cache.get(city);
-      const isExpired = Date.now() - timestamp > CACHE_EXPIRATION;
+  // Check cache
+  const cachedWeather = weatherCache.get(city);
+  if (cachedWeather) {
+    console.log(`Cache hit for city: ${city}`);
+    return c.json(cachedWeather);
+  }
 
-      if (!isExpired) {
-        console.log("Serving from cache: ", city);
-        return c.json(data);
-      }
-      // If expired, delete the cache history
-      cache.delete(city);
-      console.log("deleting cache")
-    }
+  console.log(`Cache miss for city: ${city}`);
 
+  try {    
     // step 1: Get city coordinates using Nominatim API
     const geoResponse = await fetch(
       `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(city)}`
@@ -63,6 +57,9 @@ app.get('/api/weather', async (c) => {
     }
 
     const weatherData = await weatherResponse.json();
+    
+    // Cache the fetched weather data
+    weatherCache.set(city, weatherData);
 
     // simplify the result
     const result = {
