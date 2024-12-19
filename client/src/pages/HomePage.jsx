@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import useSWR from 'swr';
+import "../index.css";
 
 const fetcher = (url) => fetch(url).then((res) => res.json());
 
@@ -26,7 +27,10 @@ export default function HomePage() {
 
   return (
     <div className="wrapper">
-      <h1>Weather App</h1>
+      <p className="text-xl text-center mt-10 text-blue-500 hover:text-blue-700 hover:scale-110 transition-all duration-300 mb-4">
+        Tailwind CSS test
+      </p>
+    <h1>Weather App</h1>
       <form onSubmit={handleSearch}>
         <input
           type="text"
