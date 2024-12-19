@@ -58,15 +58,15 @@ app.get('/api/weather', async (c) => {
 
     const weatherData = await weatherResponse.json();
     
-    // Cache the fetched weather data
-    weatherCache.set(city, weatherData);
-
     // simplify the result
     const result = {
       temperature: weatherData.current_weather.temperature,
       windspeed: weatherData.current_weather.windspeed,
       weathercode: weatherData.current_weather.weathercode,
     };
+
+    // Cache the fetched weather data
+    weatherCache.set(city, result);
 
     return c.json(result);
   } catch (error) {
