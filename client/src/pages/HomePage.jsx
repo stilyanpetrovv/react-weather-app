@@ -1,58 +1,61 @@
 import React, { useState } from 'react';
-import useSWR from 'swr';
-import "../index.css";
+import axios from 'axios';
 
-const fetcher = (url) => fetch(url).then((res) => res.json());
-
-export default function HomePage() {
+function WeatherApp() {
   const [city, setCity] = useState('');
-  const [searchCity, setSearchCity] = useState(''); // For triggering the API call
+  const [weather, setWeather] = useState(null);
+  const [error, setError] = useState('');
 
-  // SWR fetch hook
-  const { data, error, isLoading } = useSWR(
-    searchCity ? `http://localhost:3000/api/weather?city=${searchCity}` : null, // Only fetch if searchCity is not empty
-    fetcher,
-    { revalidateOnFocus: false } // Optional: Disable revalidation on window focus
-  );
+  const fetchWeather = async () => {
+    setError('');
+    setWeather(null); // Reset previous data before new request
+    try {
+      const response = await axios.get(`http://localhost:3000/api/weather?city=${city}`);
+      setWeather(response.data);
+    } catch (err) {
+      if (err.response) {
+        // Server returned an error response
+        setError(err.response.data.error || 'Something went wrong!');
+      } else {
+        // Other errors (e.g., network issues)
+        setError('Unable to fetch data. Please try again later.');
+      }
+    }
+  };
 
   // Handle form submission
-  const handleSearch = (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
-    if (city.trim()) {
-      setSearchCity(city); // Trigger SWR to fetch the weather data
-    } else {
-      alert('Please enter a valid city name.');
+    if (!city.trim()) {
+      setError('City name cannot be empty!');
+      return;
     }
+    fetchWeather();
   };
 
   return (
     <div className="wrapper">
-      <p className="text-xl text-center mt-10 text-blue-500 hover:text-blue-700 hover:scale-110 transition-all duration-300 mb-4">
-        Tailwind CSS test
-      </p>
-    <h1>Weather App</h1>
-      <form onSubmit={handleSearch}>
+      <h1>Weather App</h1>
+      <form onSubmit={handleSubmit}>
         <input
           type="text"
+          placeholder="Enter city name"
           value={city}
           onChange={(e) => setCity(e.target.value)}
-          placeholder="Enter city name"
         />
-        <button type="submit">Search</button>
+        <button type="submit">Get Weather</button>
       </form>
-
-      {/* Display loading, error, or weather data */}
-      {isLoading && <p>Loading...</p>}
-      {error && <p style={{ color: 'red' }}>Error fetching weather data.</p>}
-      {data && !data.error && (
+      {error && <p className="error">{error}</p>}
+      {weather && (
         <div className="weather-details">
           <h3>Weather Details:</h3>
-          <p>Temperature: {data.temperature}°C</p>
-          <p>Windspeed: {data.windspeed} km/h</p>
-          <p>Weather Code: {data.weathercode}</p>
+          <p>Temperature: {weather.temperature}°C</p>
+          <p>Windspeed: {weather.windspeed} km/h</p>
+          <p>Weather Code: {weather.weathercode}</p>
         </div>
       )}
-      {data?.error && <p style={{ color: 'red' }}>{data.error}</p>}
     </div>
   );
 }
+
+export default WeatherApp;
