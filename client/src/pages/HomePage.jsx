@@ -51,6 +51,7 @@ function WeatherApp() {
             <p>Temperature: {weather.temperature}°C</p>
             <p>Windspeed: {weather.windspeed} km/h</p>
             <p>Weather Code: {weather.weathercode}</p>
+            <p>Relative humidity: {weather.relative_humidity}</p>
           </div>
        )}
         </form>
