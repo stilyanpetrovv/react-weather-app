@@ -1,59 +1,60 @@
 import React, { useState } from 'react';
+import useSWR from 'swr';
 import axios from 'axios';
+
+const fetcher = (url) => axios.get(url).then((res) => res.data);
 
 function WeatherApp() {
   const [city, setCity] = useState('');
-  const [weather, setWeather] = useState(null);
-  const [error, setError] = useState('');
-
-  const fetchWeather = async () => {
-    setError('');
-    setWeather(null); // Reset previous data before new request
-    try {
-      const response = await axios.get(`http://localhost:3000/api/weather?city=${city}`);
-      setWeather(response.data);
-    } catch (err) {
-      if (err.response) {
-        // Server returned an error response
-        setError(err.response.data.error || 'Something went wrong!');
-      } else {
-        // Other errors (e.g., network issues)
-        setError('Unable to fetch data. Please try again later.');
-      }
+  const [query, setQuery] = useState(null); // Track user-submitted city
+  const { data: weather, error, isValidating } = useSWR(
+    query ? `http://localhost:3000/api/weather?city=${query}` : null,
+    fetcher,
+    {
+      revalidateOnFocus: false,
+      dedupingInterval: 60000, // Prevent refetch on window focus
     }
-  };
+  );
 
-  // Handle form submission
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!city.trim()) {
-      setError('City name cannot be empty!');
+      alert('City name cannot be empty!');
       return;
     }
-    fetchWeather();
+    setQuery(city); // Trigger SWR fetch by setting query
   };
 
   return (
-    <div className="wrapper">
-      <h1>Weather App</h1>
-      <form onSubmit={handleSubmit}>
-        <input
-          type="text"
-          placeholder="Enter city name"
-          value={city}
-          onChange={(e) => setCity(e.target.value)}
-        />
-        <button type="submit">Get Weather</button>
-      </form>
-      {error && <p className="error">{error}</p>}
-      {weather && (
-        <div className="weather-details">
-          <h3>Weather Details:</h3>
-          <p>Temperature: {weather.temperature}°C</p>
-          <p>Windspeed: {weather.windspeed} km/h</p>
-          <p>Weather Code: {weather.weathercode}</p>
-        </div>
-      )}
+    <div className="min-h-screen flex items-center justify-center bg-gray-100">
+      <div className="bg-white p-8 rounded shadow-md w-full max-w-sm">
+        <h1 className="text-xl font-bold mb-4">Weather App</h1>
+        <form onSubmit={handleSubmit}>
+          <input
+            type="text"
+            placeholder="Enter city name"
+            value={city}
+            onChange={(e) => setCity(e.target.value)}
+            className="w-full px-4 py-2 border rounded mb-4"
+          />
+          <button
+            type="submit"
+            className="w-full bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded"
+          >
+            Get Weather
+          </button>
+          {isValidating && <p className="text-green-500">Loading...</p>}
+          {error && <p className="text-red-500">Error: {error.response?.data?.error || error.    message}</p>}
+          {weather && (
+          <div>
+            <h3>Weather Details:</h3>
+            <p>Temperature: {weather.temperature}°C</p>
+            <p>Windspeed: {weather.windspeed} km/h</p>
+            <p>Weather Code: {weather.weathercode}</p>
+          </div>
+       )}
+        </form>
+      </div>
     </div>
   );
 }
