@@ -27,11 +27,8 @@ app.get('/api/weather', async (c) => {
   // Check cache
   const cachedWeather = weatherCache.get(city);
   if (cachedWeather) {
-    console.log(`Cache hit for city: ${city}`);
     return c.json(cachedWeather);
   }
-
-  console.log(`Cache miss for city: ${city}`);
 
   try {    
     // step 1: Get city coordinates using Nominatim API
@@ -49,7 +46,8 @@ app.get('/api/weather', async (c) => {
 
     // step 2: Fetch weather data
     const weatherResponse = await fetch(
-      `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true`
+      `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,apparent_temperature,is_day,precipitation,rain,showers,snowfall,weather_code,cloud_cover,pressure_msl,surface_pressure,wind_speed_10m,wind_direction_10m,wind_gusts_10m`
+      // `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true`
     );
 
     if (!weatherResponse.ok) {
@@ -57,12 +55,14 @@ app.get('/api/weather', async (c) => {
     }
 
     const weatherData = await weatherResponse.json();
+    console.log(weatherData)
     
     // simplify the result
     const result = {
-      temperature: weatherData.current_weather.temperature,
-      windspeed: weatherData.current_weather.windspeed,
-      weathercode: weatherData.current_weather.weathercode,
+      temperature: weatherData.current.temperature_2m,
+      windspeed: weatherData.current.wind_speed_10m,
+      weathercode: weatherData.current.weather_code,
+      relative_humidity: weatherData.current.relative_humidity_2m,
     };
 
     // Cache the fetched weather data
