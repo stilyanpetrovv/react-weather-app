@@ -5,7 +5,7 @@ import fetch from "node-fetch";
 import NodeCache from 'node-cache';
 
 const app = new Hono();
-const weatherCache = new NodeCache({ stdTTL: 60 }); // Cache TTL of 1 minute (60 seconds)
+const weatherCache = new NodeCache({ stdTTL: 120 }); // Cache TTL of 2 minutes (120 seconds)
 
 app.use('*', cors({
   origin: 'http://localhost:5173',
@@ -16,7 +16,7 @@ app.use('*', cors({
   credentials: true,
 }))
 
-app.get('/api/weather', async (c) => {
+app.get('/weather', async (c) => {
   const city = c.req.query("city")?.trim().toLocaleLowerCase();
 
   // Input validation
@@ -47,7 +47,6 @@ app.get('/api/weather', async (c) => {
     // step 2: Fetch weather data
     const weatherResponse = await fetch(
       `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,apparent_temperature,is_day,precipitation,rain,showers,snowfall,weather_code,cloud_cover,pressure_msl,surface_pressure,wind_speed_10m,wind_direction_10m,wind_gusts_10m`
-      // `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true`
     );
 
     if (!weatherResponse.ok) {
@@ -55,14 +54,17 @@ app.get('/api/weather', async (c) => {
     }
 
     const weatherData = await weatherResponse.json();
-    console.log(weatherData)
+    console.log(weatherData, "\n\nthat's the weather data \n")
     
     // simplify the result
     const result = {
+      is_day: weatherData.current.is_day,
       temperature: weatherData.current.temperature_2m,
       windspeed: weatherData.current.wind_speed_10m,
       weathercode: weatherData.current.weather_code,
       relative_humidity: weatherData.current.relative_humidity_2m,
+      rain: weatherData.current.rain,
+      showers: weatherData.current.showers,
     };
 
     // Cache the fetched weather data
