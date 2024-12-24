@@ -54,15 +54,16 @@ app.get('/weather', async (c) => {
     }
 
     const weatherData = await weatherResponse.json();
-    console.log(weatherData, "\n\nthat's the weather data \n")
+    console.log(weatherData)
+    console.log(`\n\nthat's the weather data for ${city}\n`)
     
     // simplify the result
     const result = {
       is_day: weatherData.current.is_day,
       temperature: weatherData.current.temperature_2m,
       windspeed: weatherData.current.wind_speed_10m,
-      weathercode: weatherData.current.weather_code,
       relative_humidity: weatherData.current.relative_humidity_2m,
+      cloud_cover: weatherData.current.cloud_cover,
       rain: weatherData.current.rain,
       showers: weatherData.current.showers,
     };
