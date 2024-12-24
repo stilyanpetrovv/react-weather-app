@@ -1,6 +1,10 @@
 import React, { useState } from 'react';
 import useSWR from 'swr';
 import axios from 'axios';
+// import react-icons
+import { FaSun, FaMoon, FaCloud, FaUmbrella } from "react-icons/fa";
+import { WiRain, WiCloud, WiCloudy } from "react-icons/wi";
+
 
 const fetcher = (url) => axios.get(url).then((res) => res.data);
 
@@ -35,11 +39,17 @@ function WeatherApp() {
   let rain = "";
   if (weather?.rain === 1) {
     rain = "It's raining";
-    if (weather?.showers === 1) {
-      rain = "It's raining heavy."
-    }
+  } else if (weather?.showers > 0) {
+    rain = "It's raining";
   } else {
     rain = "It's not raining";
+  }
+
+  let cloudCover = "";
+  if (weather?.cloud_cover <= 40 && weather?.cloud_cover >= 20) {
+    cloudCover = "Partially cloudy";
+  } else {
+    cloudCover = "Cloudy";
   }
 
   return (
@@ -63,43 +73,51 @@ function WeatherApp() {
         {isValidating && <p className="text-green-400 mt-4">Loading...</p>}
         {error && <p className="text-red-400 mt-4">Error: {error.response?.data?.error || error.message}</p>}
         {weather && (
-  <div className="mt-4 flex flex-col items-center justify-center text-center bg-gray-700 p-6 rounded-lg shadow-lg">
-    <h3 className="text-lg font-semibold text-gray-100 mb-4">Weather Details</h3>
-    <div className="flex flex-col items-center gap-2">
-      <p className="flex items-center">
-        <span className="mr-2 text-yellow-300">
-          {/* Example icon: Sun for daytime */}
-          {timeOfDay === 'Day' ? (
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707m12.728 0l-.707-.707M6.343 6.343l-.707-.707" />
-            </svg>
-          ) : (
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-blue-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 12.79V11.2a6.002 6.002 0 00-5-5.917V4a2 2 0 10-4 0v1.283A6.002 6.002 0 003 11.2v1.59c0 1.667.333 2.167.917 2.75 2.333 2.333 5.417 3.25 8.083 3.25h.25c2.667 0 5.75-.917 8.083-3.25.584-.583.917-1.083.917-2.75z" />
-            </svg>
-          )}
-        </span>
-        Right now it's: {timeOfDay}
-      </p>
-      <p>
-        <span className="font-bold text-teal-300">Temperature:</span> {weather.temperature}°C
-      </p>
-      <p>
-        <span className="font-bold text-blue-300">Windspeed:</span> {weather.windspeed} km/h
-      </p>
-      <p>
-        <span className="font-bold text-purple-300">Weather Code:</span> {weather.weathercode}
-      </p>
-      <p>
-        <span className="font-bold text-yellow-300">Relative humidity:</span> {weather.relative_humidity}
-      </p>
-      <p>
-        <span className="font-bold text-blue-400">Rain:</span> {rain}
-      </p>
-    </div>
-  </div>
-)}
-
+          <div className="mt-4 flex flex-col items-center justify-center text-center bg-gray-700 p-6 rounded-lg shadow-lg">
+            <h3 className="text-lg font-semibold text-gray-100 mb-4">Weather Details</h3>
+            <div className="flex flex-col items-center gap-2">
+              {/* Time of day conditions */}
+              <p className="flex items-center">
+                <span className="mr-2 text-yellow-300">
+                  {timeOfDay === 'Day' ? (
+                    <FaSun className="text-yellow-500 text-xl mb-0.5"/>
+                  ) : (
+                    <FaMoon className="text-indigo-700 text-xl mb-0.5"/>
+                  )}
+                </span>
+                Right now it's: {timeOfDay}
+              </p>
+              <p>
+                <span className="font-bold text-teal-300">Temperature:</span> {weather.temperature}°C
+              </p>
+              <p>
+                <span className="font-bold text-blue-300">Windspeed:</span> {weather.windspeed} km/h
+              </p>
+              <p>
+                <span className="font-bold text-yellow-300">Relative humidity:</span> {weather.relative_humidity}
+              </p>
+              {/* cloudy weather conditions */}
+              <p className="flex items-center">
+                <span className="text-blue-400 mr-1">
+                  {cloudCover === "Partially cloudy" ? (
+                    <WiCloud className="text-indigo-700 text-4xl mb-0.5" />
+                  ) : (
+                    <WiCloudy className="text-indigo-700 text-4xl mb-0.5" />
+                  )}
+                </span>
+                <span className="font-bold text-indigo-700">Cloud cover:</span>
+                <span className="ml-1">{cloudCover}</span>
+              </p>
+              {/* rain conditions */}
+              <p className="flex items-center">
+                <span className="font-bold text-blue-400 mr-1">
+                  Rain: {rain === "It's raining" ? (
+                    <WiRain className="text-indigo-700 text-xl mb-1"/>
+                    ) : (null)} </span> {rain}
+              </p>
+            </div>
+        </div>
+      )}
        </form>
       </div>
     </div>
