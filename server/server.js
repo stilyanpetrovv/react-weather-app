@@ -70,7 +70,6 @@ app.get('/weather', async (c) => {
 
     // Cache the fetched weather data
     weatherCache.set(city, result);
-
     return c.json(result);
   } catch (error) {
     console.error("Error ferching weather data: ", error);

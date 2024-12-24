@@ -2,8 +2,8 @@ import React, { useState } from 'react';
 import useSWR from 'swr';
 import axios from 'axios';
 // import react-icons
-import { FaSun, FaMoon, FaCloud, FaUmbrella } from "react-icons/fa";
-import { WiRain, WiCloud, WiCloudy } from "react-icons/wi";
+import { FaSun, FaMoon } from "react-icons/fa";
+import { WiThermometer, WiStrongWind, WiRain, WiCloud, WiCloudy, WiHumidity } from "react-icons/wi";
 
 
 const fetcher = (url) => axios.get(url).then((res) => res.data);
@@ -29,29 +29,46 @@ function WeatherApp() {
     setQuery(city); // Trigger SWR fetch by setting query
   };
 
+  // Time of day check
   let timeOfDay = "";
+
   if (weather?.is_day === 1) {
     timeOfDay = "Day";
   } else {
     timeOfDay = "Night";
   }
 
-  let rain = "";
-  if (weather?.rain === 1) {
-    rain = "It's raining";
-  } else if (weather?.showers > 0) {
-    rain = "It's raining";
+  // Rain check
+  let rainDescription = ""; // Renamed variable to avoid confusion with `rain`
+
+  if (weather?.rain >= 0.1 && weather?.rain < 0.2) {
+    rainDescription = "It's raining slightly";
+  } else if (weather?.rain >= 0.2 && weather?.rain < 0.5) {
+    rainDescription = "It's raining moderately";
+  } else if (weather?.rain >= 0.5 && weather?.rain < 1) {
+    rainDescription = "It's raining heavily";
+  } else if (weather?.rain >= 1) {
+    rainDescription = "It's raining very heavily";
   } else {
-    rain = "It's not raining";
+    rainDescription = "It's not raining";
   }
 
+  // Cloud cover check
   let cloudCover = "";
-  if (weather?.cloud_cover <= 40 && weather?.cloud_cover >= 20) {
+
+  if (weather?.cloud_cover >= 0 && weather?.cloud_cover < 20) {
+    cloudCover = "Clear";
+  } else if (weather?.cloud_cover >= 20 && weather?.cloud_cover <= 40) {
     cloudCover = "Partially cloudy";
+  } else if (weather?.cloud_cover > 40 && weather?.cloud_cover <= 70) {
+    cloudCover = "Mostly cloudy";
+  } else if (weather?.cloud_cover > 70 && weather?.cloud_cover <= 100) {
+    cloudCover = "Overcast";
   } else {
-    cloudCover = "Cloudy";
+    cloudCover = "Cloud cover data unavailable";
   }
 
+  // Render page
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-900 text-gray-200">
       <div className="bg-gray-800 p-8 rounded shadow-md w-full max-w-sm">
@@ -72,33 +89,41 @@ function WeatherApp() {
         </button>
         {isValidating && <p className="text-green-400 mt-4">Loading...</p>}
         {error && <p className="text-red-400 mt-4">Error: {error.response?.data?.error || error.message}</p>}
+        {/* Weather info */}
         {weather && (
           <div className="mt-4 flex flex-col items-center justify-center text-center bg-gray-700 p-6 rounded-lg shadow-lg">
             <h3 className="text-lg font-semibold text-gray-100 mb-4">Weather Details</h3>
             <div className="flex flex-col items-center gap-2">
               {/* Time of day conditions */}
-              <p className="flex items-center">
+              <p className="flex items-center mb-0.5">
                 <span className="mr-2 text-yellow-300">
                   {timeOfDay === 'Day' ? (
-                    <FaSun className="text-yellow-500 text-xl mb-0.5"/>
+                    <FaSun className="text-yellow-500 text-xl mb-1"/>
                   ) : (
-                    <FaMoon className="text-indigo-700 text-xl mb-0.5"/>
+                    <FaMoon className="text-indigo-700 text-xl mb-1"/>
                   )}
-                </span>
-                Right now it's: {timeOfDay}
+                </span> Right now it's: {timeOfDay}
               </p>
-              <p>
-                <span className="font-bold text-teal-300">Temperature:</span> {weather.temperature}°C
+              {/* thermometer */}
+              <p className='flex items-center mt-1'>
+                <span><WiThermometer className='text-teal-300 text-3xl mb-0.5'/></span>
+                <span className="font-bold text-teal-300 mr-2">Temperature:</span> {weather.temperature}°C
               </p>
-              <p>
-                <span className="font-bold text-blue-300">Windspeed:</span> {weather.windspeed} km/h
+              {/* wind speed */}
+              <p className='flex items-center mb-0.5 mt-0.5'>
+                <span><WiStrongWind className='text-blue-300 text-3xl mr-1 mb-1'/></span>
+                <span className="font-bold text-blue-300 mr-2">
+                  Windspeed:</span> {weather.windspeed} km/h
               </p>
-              <p>
-                <span className="font-bold text-yellow-300">Relative humidity:</span> {weather.relative_humidity}
+              {/* humidity text-yellow-300*/}
+              <p className="flex items-center">
+                <span><WiHumidity className='text-yellow-300 text-3xl mb-1'/></span>
+                <span className="font-bold text-yellow-300 mr-2">
+                  Relative humidity: </span> {weather.relative_humidity}
               </p>
               {/* cloudy weather conditions */}
-              <p className="flex items-center">
-                <span className="text-blue-400 mr-1">
+              <p className="flex items-center -mt-1">
+                <span className="text-blue-400 mr-0.5">
                   {cloudCover === "Partially cloudy" ? (
                     <WiCloud className="text-indigo-700 text-4xl mb-0.5" />
                   ) : (
@@ -106,14 +131,13 @@ function WeatherApp() {
                   )}
                 </span>
                 <span className="font-bold text-indigo-700">Cloud cover:</span>
-                <span className="ml-1">{cloudCover}</span>
+                <span className="ml-2">{cloudCover}</span>
               </p>
               {/* rain conditions */}
               <p className="flex items-center">
-                <span className="font-bold text-blue-400 mr-1">
-                  Rain: {rain === "It's raining" ? (
-                    <WiRain className="text-indigo-700 text-xl mb-1"/>
-                    ) : (null)} </span> {rain}
+                <span><WiRain className="text-blue-400 text-3xl mb-1 mr-1"/></span>
+                <span className="font-bold text-blue-400 mr-2">
+                  Rain:</span> {rainDescription}
               </p>
             </div>
         </div>
