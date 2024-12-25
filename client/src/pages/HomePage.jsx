@@ -3,7 +3,7 @@ import useSWR from 'swr';
 import axios from 'axios';
 // import react-icons
 import { FaSun, FaMoon } from "react-icons/fa";
-import { WiThermometer, WiStrongWind, WiRain, WiCloud, WiCloudy, WiHumidity } from "react-icons/wi";
+import { WiSnow, WiThermometer, WiStrongWind, WiRain, WiCloud, WiCloudy, WiHumidity } from "react-icons/wi";
 
 
 const fetcher = (url) => axios.get(url).then((res) => res.data);
@@ -38,7 +38,7 @@ function WeatherApp() {
     timeOfDay = "Night";
   }
 
-  // Rain check
+  // Rain  and snow check
   let rainDescription = ""; // Renamed variable to avoid confusion with `rain`
 
   if (weather?.rain >= 0.1 && weather?.rain < 0.2) {
@@ -51,6 +51,13 @@ function WeatherApp() {
     rainDescription = "It's raining very heavily";
   } else {
     rainDescription = "It's not raining";
+  }
+
+  // snowfall check
+  let snowfall = "";
+  
+  if (weather?.snowfall > 0) {
+    snowfall = "It's snowing";
   }
 
   // Cloud cover check
@@ -130,15 +137,26 @@ function WeatherApp() {
                     <WiCloudy className="text-indigo-700 text-4xl mb-0.5" />
                   )}
                 </span>
-                <span className="font-bold text-indigo-700">Cloud cover:</span>
-                <span className="ml-2">{cloudCover}</span>
+                <span className="font-bold text-indigo-700 mr-2">
+                  Cloud cover:</span> {cloudCover}
               </p>
               {/* rain conditions */}
-              <p className="flex items-center">
-                <span><WiRain className="text-blue-400 text-3xl mb-1 mr-1"/></span>
-                <span className="font-bold text-blue-400 mr-2">
-                  Rain:</span> {rainDescription}
-              </p>
+              <div className='-mt-1'>
+                {weather?.snowfall > weather?.rain ? (
+                  <p className="flex items-center">
+                    <span><WiSnow className="text-blue-400 text-3xl mb-1 mr-1"/></span>
+                    <span className="font-bold text-blue-400 mr-2">
+                      Snow:</span> {snowfall}
+                  </p> 
+                ) : (
+                  // render snow fall
+                  <p className="flex items-center">
+                    <span><WiRain className="text-blue-400 text-3xl mb-1 mr-1"/></span>
+                    <span className="font-bold text-blue-400 mr-2">
+                      Rain:</span> {rainDescription}
+                  </p>
+                )}
+              </div>
             </div>
         </div>
       )}

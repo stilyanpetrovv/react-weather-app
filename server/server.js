@@ -54,6 +54,7 @@ app.get('/weather', async (c) => {
     }
 
     const weatherData = await weatherResponse.json();
+    // testing and debugging console.logging
     console.log(weatherData)
     console.log(`\n\nthat's the weather data for ${city}\n`)
     
@@ -65,7 +66,7 @@ app.get('/weather', async (c) => {
       relative_humidity: weatherData.current.relative_humidity_2m,
       cloud_cover: weatherData.current.cloud_cover,
       rain: weatherData.current.rain,
-      showers: weatherData.current.showers,
+      snowfall: weatherData.current.snowfall,
     };
 
     // Cache the fetched weather data
