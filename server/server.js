@@ -66,6 +66,7 @@ app.get('/weather', async (c) => {
       relative_humidity: weatherData.current.relative_humidity_2m,
       cloud_cover: weatherData.current.cloud_cover,
       rain: weatherData.current.rain,
+      showers: weatherData.current.showers,
       snowfall: weatherData.current.snowfall,
     };
 

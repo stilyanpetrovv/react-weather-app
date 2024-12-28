@@ -3,7 +3,7 @@ import useSWR from 'swr';
 import axios from 'axios';
 // import react-icons
 import { FaSun, FaMoon } from "react-icons/fa";
-import { WiSnow, WiThermometer, WiStrongWind, WiRain, WiCloud, WiCloudy, WiHumidity } from "react-icons/wi";
+import { WiNightClear, WiDaySunny, WiSnow, WiThermometer, WiStrongWind, WiRain, WiCloud, WiCloudy, WiHumidity } from "react-icons/wi";
 
 
 const fetcher = (url) => axios.get(url).then((res) => res.data);
@@ -53,6 +53,18 @@ function WeatherApp() {
     rainDescription = "It's not raining";
   }
 
+  if (weather?.showers >= 0.1 && weather?.showers < 0.2) {
+    rainDescription = "It's raining slightly";
+  } else if (weather?.showers >= 0.2 && weather?.showers < 0.5) {
+    rainDescription = "It's raining moderately";
+  } else if (weather?.showers >= 0.5 && weather?.showers < 1) {
+    rainDescription = "It's raining heavily";
+  } else if (weather?.showers >= 1) {
+    rainDescription = "It's raining very heavily";
+  } else {
+    rainDescription = "It's not raining";
+  }
+
   // snowfall check
   let snowfall = "";
   
@@ -77,9 +89,9 @@ function WeatherApp() {
 
   // Render page
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-900 text-gray-200">
+    <div className="min-h-screen flex items-center justify-center scale-125 bg-gray-900 text-gray-200">
       <div className="bg-gray-800 p-8 rounded shadow-md w-full max-w-sm">
-      <h1 className="text-xl font-bold mb-4 text-gray-100">Weather App</h1>
+      <h1 className="text-xl font-bold mb-4 text-gray-100 text-center">Weather App</h1>
       <form onSubmit={handleSubmit}>
         <input
           type="text"
@@ -100,62 +112,74 @@ function WeatherApp() {
         {weather && (
           <div className="mt-4 flex flex-col items-center justify-center text-center bg-gray-700 p-6 rounded-lg shadow-lg">
             <h3 className="text-lg font-semibold text-gray-100 mb-4">Weather Details</h3>
-            <div className="flex flex-col items-center gap-2">
+            <div className="flex flex-col items-center gap-2 space-y-0.5">
               {/* Time of day conditions */}
-              <p className="flex items-center mb-0.5">
-                <span className="mr-2 text-yellow-300">
-                  {timeOfDay === 'Day' ? (
-                    <FaSun className="text-yellow-500 text-xl mb-1"/>
-                  ) : (
-                    <FaMoon className="text-indigo-700 text-xl mb-1"/>
-                  )}
-                </span> Right now it's: {timeOfDay}
-              </p>
-              {/* thermometer */}
-              <p className='flex items-center mt-1'>
+              <div>
+                {weather?.is_day === 0 ? (
+                  <p className="flex items-center">
+                    <span><FaMoon className="text-indigo-700 text-xl mr-2 mb-1"/></span>
+                    <span className="font-bold text-indigo-700 mr-2">
+                      Right now it's: </span> {timeOfDay}
+                  </p> 
+                ) : (
+                  // render day
+                  <p className="flex items-center">
+                    <span><FaSun className="text-yellow-500 text-xl mr-2 mb-1"/></span>
+                    <span className="font-bold text-yellow-500 mr-2">
+                      Right now it's: </span> {timeOfDay}
+                  </p>
+                )}
+              </div>
+              <p className='flex items-center'>
                 <span><WiThermometer className='text-teal-300 text-3xl mb-0.5'/></span>
                 <span className="font-bold text-teal-300 mr-2">Temperature:</span> {weather.temperature}°C
               </p>
               {/* wind speed */}
-              <p className='flex items-center mb-0.5 mt-0.5'>
+              <p className='flex items-center'>
                 <span><WiStrongWind className='text-blue-300 text-3xl mr-1 mb-1'/></span>
                 <span className="font-bold text-blue-300 mr-2">
                   Windspeed:</span> {weather.windspeed} km/h
               </p>
-              {/* humidity text-yellow-300*/}
+              {/* humidity */}
               <p className="flex items-center">
-                <span><WiHumidity className='text-yellow-300 text-3xl mb-1'/></span>
+                <span><WiHumidity className='text-yellow-300 text-3xl mb-0.5'/></span>
                 <span className="font-bold text-yellow-300 mr-2">
                   Relative humidity: </span> {weather.relative_humidity}
               </p>
               {/* cloudy weather conditions */}
-              <p className="flex items-center -mt-1">
-                <span className="text-blue-400 mr-0.5">
-                  {cloudCover === "Partially cloudy" ? (
-                    <WiCloud className="text-indigo-700 text-4xl mb-0.5" />
+              <p className="flex items-center">
+                <span className="text-pink-500 mr-0.5">
+                  {cloudCover === "Clear" && weather?.is_day === 1 ? (
+                    <WiDaySunny className="text-pink-500 text-3xl" />
+                  ) : cloudCover === "Clear" && weather?.is_day === 0 ? (
+                    <WiNightClear className="text-pink-500 text-4xl mb-1 -mr-0.5" />
+                  ) : cloudCover === "Partially cloudy" ? (
+                    <WiCloud className="text-pink-500 text-4xl" />
                   ) : (
-                    <WiCloudy className="text-indigo-700 text-4xl mb-0.5" />
+                    <WiCloudy className="text-pink-500 text-4xl" />
                   )}
                 </span>
-                <span className="font-bold text-indigo-700 mr-2">
-                  Cloud cover:</span> {cloudCover}
+                <span className="font-bold text-pink-500 mr-2">Cloud cover:</span> {cloudCover}
               </p>
               {/* rain conditions */}
-              <div className='-mt-1'>
-                {weather?.snowfall > weather?.rain ? (
-                  <p className="flex items-center">
-                    <span><WiSnow className="text-blue-400 text-3xl mb-1 mr-1"/></span>
-                    <span className="font-bold text-blue-400 mr-2">
-                      Snow:</span> {snowfall}
-                  </p> 
-                ) : (
-                  // render snow fall
-                  <p className="flex items-center">
-                    <span><WiRain className="text-blue-400 text-3xl mb-1 mr-1"/></span>
-                    <span className="font-bold text-blue-400 mr-2">
-                      Rain:</span> {rainDescription}
-                  </p>
-                )}
+              <div>
+                {/* Render only if there's rain or snow */}
+                {weather?.rain > 0 || weather?.snowfall > 0 || weather?.showers > 0 ? (
+                  <div>
+                    {/* Check if snow is greater than rain */}
+                    {weather?.snowfall > weather?.rain ? (
+                      <p className="flex items-center">
+                        <span><WiSnow className="text-blue-400 text-3xl mr-1"/></span>
+                        <span className="font-bold text-blue-400 mr-2">Snow:</span> {snowfall}
+                      </p>
+                    ) : (
+                      <p className="flex items-center">
+                        <span><WiRain className="text-blue-400 text-3xl mr-1"/></span>
+                        <span className="font-bold text-blue-400 mr-2">Rain:</span> {rainDescription}
+                      </p>
+                    )}
+                  </div>
+                ) : null}
               </div>
             </div>
         </div>
