@@ -5,66 +5,55 @@ import axios from 'axios';
 import { FaSun, FaMoon } from "react-icons/fa";
 import { WiNightClear, WiDaySunny, WiSnow, WiThermometer, WiStrongWind, WiRain, WiCloud, WiCloudy, WiHumidity } from "react-icons/wi";
 
-
 const fetcher = (url) => axios.get(url).then((res) => res.data);
 
 function WeatherApp() {
   const [city, setCity] = useState('');
-  const [query, setQuery] = useState(null); // Track user-submitted city
+  const [countryCode, setCountryCode] = useState('ALL');
+  const [query, setQuery] = useState(null);
+  
   const { data: weather, error, isValidating } = useSWR(
-    query ? `http://localhost:3000/weather?city=${query}` : null,
+    query && query.city // Ensure `query.city` is non-empty
+      ? `http://localhost:3000/weather?city=${query.city}&country=${query.country}`
+      : null,
     fetcher,
     {
-      revalidateOnFocus: false, // Prevent refetch on window focus
-      dedupingInterval: 120000, // cache for 2 minutes
+      revalidateOnFocus: false,
+      dedupingInterval: 120000, // Cache for 2 minutes
     }
   );
 
   const handleSubmit = (e) => {
     e.preventDefault();
+
+    // see the query to debug
+    console.log(query)
+
     if (!city.trim()) {
       alert('City name cannot be empty!');
       return;
     }
-    setQuery(city); // Trigger SWR fetch by setting query
+
+    // Only update the query when valid
+    setQuery({
+      city: city.trim(),
+      country: countryCode !== 'ALL' ? countryCode : '', // Pass empty if "ALL"
+    });
   };
-
+  
   // Time of day check
-  let timeOfDay = "";
-
-  if (weather?.is_day === 1) {
-    timeOfDay = "Day";
-  } else {
-    timeOfDay = "Night";
-  }
+  let timeOfDay = weather?.is_day === 1 ? "Day" : "Night";
 
   // Rain  and snow check
-  let rainDescription = ""; // Renamed variable to avoid confusion with `rain`
+  let rainDescription = "It's not raining";
 
-  if (weather?.rain >= 0.1 && weather?.rain < 0.2) {
-    rainDescription = "It's raining slightly";
-  } else if (weather?.rain >= 0.2 && weather?.rain < 0.5) {
-    rainDescription = "It's raining moderately";
-  } else if (weather?.rain >= 0.5 && weather?.rain < 1) {
-    rainDescription = "It's raining heavily";
-  } else if (weather?.rain >= 1) {
-    rainDescription = "It's raining very heavily";
-  } else {
-    rainDescription = "It's not raining";
+  if (weather?.rain > 0 || weather?.showers > 0) {
+    const rainIntensity = Math.max(weather?.rain || 0, weather?.showers || 0);
+    if (rainIntensity < 0.2) rainDescription = "It's raining slightly";
+    else if (rainIntensity < 0.5) rainDescription = "It's raining moderately";
+    else if (rainIntensity < 1) rainDescription = "It's raining heavily";
+    else rainDescription = "It's raining very heavily";
   }
-
-  if (weather?.showers >= 0.1 && weather?.showers < 0.2) {
-    rainDescription = "It's raining slightly";
-  } else if (weather?.showers >= 0.2 && weather?.showers < 0.5) {
-    rainDescription = "It's raining moderately";
-  } else if (weather?.showers >= 0.5 && weather?.showers < 1) {
-    rainDescription = "It's raining heavily";
-  } else if (weather?.showers >= 1) {
-    rainDescription = "It's raining very heavily";
-  } else {
-    rainDescription = "It's not raining";
-  }
-
   // snowfall check
   let snowfall = "";
   
@@ -76,15 +65,13 @@ function WeatherApp() {
   let cloudCover = "";
 
   if (weather?.cloud_cover >= 0 && weather?.cloud_cover < 20) {
-    cloudCover = "Clear";
+      cloudCover = "Clear";
   } else if (weather?.cloud_cover >= 20 && weather?.cloud_cover <= 40) {
-    cloudCover = "Partially cloudy";
+      cloudCover = "Partially cloudy";
   } else if (weather?.cloud_cover > 40 && weather?.cloud_cover <= 70) {
-    cloudCover = "Mostly cloudy";
+      cloudCover = "Mostly cloudy";
   } else if (weather?.cloud_cover > 70 && weather?.cloud_cover <= 100) {
-    cloudCover = "Overcast";
-  } else {
-    cloudCover = "Cloud cover data unavailable";
+      cloudCover = "Overcast";
   }
 
   // Render page
@@ -100,6 +87,18 @@ function WeatherApp() {
           onChange={(e) => setCity(e.target.value)}
           className="w-full px-4 py-2 border border-gray-600 rounded mb-4 bg-gray-700 text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
+        <select
+          value={countryCode}
+          onChange={(e) => setCountryCode(e.target.value)}
+          className="w-full px-4 py-2 border border-gray-600 rounded mb-4 bg-gray-700 text-gray-100 text-center placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        >
+          <option value="ALL">All</option>
+          <option value="US">US</option>
+          <option value="BG">BG</option>
+          <option value="DE">DE</option>
+          <option value="FR">FR</option>
+          {/* Add more countries */}
+        </select>
         <button
           type="submit"
           className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded focus:outline-none focus:ring-2 focus:ring-blue-400"

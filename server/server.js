@@ -17,24 +17,28 @@ app.use('*', cors({
 }))
 
 app.get('/weather', async (c) => {
+  // Extract query parameters
   const city = c.req.query("city")?.trim().toLocaleLowerCase();
+  const country = c.req.query("country")?.trim().toUpperCase();
 
   // Input validation
-  if (!city || city.trim() === "") {
-    return c.json({ error : "City name cannot be empty!" }, 400);
+  if (!city || city === "") {
+    return c.json({ error: "City name cannot be empty!" }, 400);
   }
 
+  const countryParam = `&countrycodes=${country}`;
+
+  const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(city)}${countryParam}`;
+
   // Check cache
-  const cachedWeather = weatherCache.get(city);
+  const cachedWeather = weatherCache.get(city, country);
   if (cachedWeather) {
     return c.json(cachedWeather);
   }
 
   try {    
     // step 1: Get city coordinates using Nominatim API
-    const geoResponse = await fetch(
-      `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(city)}`
-    );
+    const geoResponse = await fetch(url);
 
     const geoData = await geoResponse.json();
 
@@ -46,7 +50,7 @@ app.get('/weather', async (c) => {
 
     // step 2: Fetch weather data
     const weatherResponse = await fetch(
-      `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,apparent_temperature,is_day,precipitation,rain,showers,snowfall,weather_code,cloud_cover,pressure_msl,surface_pressure,wind_speed_10m,wind_direction_10m,wind_gusts_10m`
+      `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,is_day,precipitation,rain,showers,snowfall,cloud_cover,wind_speed_10m`
     );
 
     if (!weatherResponse.ok) {
@@ -57,6 +61,8 @@ app.get('/weather', async (c) => {
     // testing and debugging console.logging
     console.log(weatherData)
     console.log(`\n\nthat's the weather data for ${city}\n`)
+    console.log(url)
+    console.log(cachedWeather)
     
     // simplify the result
     const result = {
@@ -71,7 +77,7 @@ app.get('/weather', async (c) => {
     };
 
     // Cache the fetched weather data
-    weatherCache.set(city, result);
+    weatherCache.set(city, country, result);
     return c.json(result);
   } catch (error) {
     console.error("Error ferching weather data: ", error);
