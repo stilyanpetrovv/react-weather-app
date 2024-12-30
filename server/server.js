@@ -3,6 +3,7 @@ import { serve } from '@hono/node-server';
 import { cors } from 'hono/cors'
 import fetch from "node-fetch";
 import NodeCache from 'node-cache';
+import countryCodes from './data/countryCodes.js';
 
 const app = new Hono();
 const weatherCache = new NodeCache({ stdTTL: 120 }); // Cache TTL of 2 minutes (120 seconds)
@@ -17,14 +18,6 @@ app.use('*', cors({
 }))
 
 app.get('/country-codes', async (c) => {
-  const countryCodes = [
-    { code: "ALL", name: "All"},
-    { code: "US", name: "United States" },
-    { code: "BG", name: "Bulgaria" },
-    { code: "DE", name: "Germany" },
-    { code: "FR", name: "France" },
-    // Add more country codes
-  ];
   return c.json(countryCodes);
 });
 
@@ -74,10 +67,6 @@ app.get('/weather', async (c) => {
     }
 
     const weatherData = await weatherResponse.json();
-    // testing and debugging console.logging
-    console.log(weatherData)
-    console.log(`\n\nthat's the weather data for ${city}\n`)
-    console.log(url)
     
     // simplify the result
     const result = {
