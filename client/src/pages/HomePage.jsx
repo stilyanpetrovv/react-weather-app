@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import useSWR from 'swr';
 import axios from 'axios';
 // import react-icons
@@ -9,6 +9,7 @@ const fetcher = (url) => axios.get(url).then((res) => res.data);
 
 function WeatherApp() {
   const [city, setCity] = useState('');
+  const [countryCodes, setCountryCodes] = useState([]);
   const [countryCode, setCountryCode] = useState('ALL');
   const [query, setQuery] = useState(null);
   
@@ -23,9 +24,36 @@ function WeatherApp() {
     }
   );
 
+  //fetch country code dynamically from backend
+  useEffect(() => {
+    const fetchCountryCodes = async () => {
+      try {
+        const response = await axios.get('http://localhost:3000/country-codes');
+        setCountryCodes(response.data);
+      } catch (error) {
+        console.error('Error fetching country codes:', error.message);
+        // Retry after a delay
+        setTimeout(fetchCountryCodes, 5000); // Retry in 5 seconds
+      }
+    };
+  
+    fetchCountryCodes();
+  }, []);
+
+  const handleCountryChange = (e) => {
+    const newCountry = e.target.value;
+    setCountryCode(newCountry);
+  
+    if (city.trim()) {
+      setQuery({
+        city,
+        country: newCountry !== 'ALL' ? newCountry : '',
+      });
+    }
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
-
     // see the query to debug
     console.log(query)
 
@@ -33,7 +61,6 @@ function WeatherApp() {
       alert('City name cannot be empty!');
       return;
     }
-
     // Only update the query when valid
     setQuery({
       city: city.trim(),
@@ -89,15 +116,14 @@ function WeatherApp() {
         />
         <select
           value={countryCode}
-          onChange={(e) => setCountryCode(e.target.value)}
-          className="w-full px-4 py-2 border border-gray-600 rounded mb-4 bg-gray-700 text-gray-100 text-center placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          onChange={handleCountryChange}
+          className="w-full px-4 py-2 border border-gray-600 rounded mb-4 bg-gray-700 text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
         >
-          <option value="ALL">All</option>
-          <option value="US">US</option>
-          <option value="BG">BG</option>
-          <option value="DE">DE</option>
-          <option value="FR">FR</option>
-          {/* Add more countries */}
+          {countryCodes.map((country) => (
+            <option key={country.code} value={country.code}>
+              {country.name}
+            </option>
+          ))}
         </select>
         <button
           type="submit"
