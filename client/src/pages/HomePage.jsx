@@ -11,6 +11,7 @@ function WeatherApp() {
   const [city, setCity] = useState('');
   const [countryCodes, setCountryCodes] = useState([]);
   const [countryCode, setCountryCode] = useState('ALL');
+  const [tempCountryCode, setTempCountryCode] = useState('ALL'); // Temporary storage for dropdown selection
   const [query, setQuery] = useState(null);
   
   const { data: weather, error, isValidating } = useSWR(
@@ -41,30 +42,21 @@ function WeatherApp() {
   }, []);
 
   const handleCountryChange = (e) => {
-    const newCountry = e.target.value;
-    setCountryCode(newCountry);
-  
-    if (city.trim()) {
-      setQuery({
-        city,
-        country: newCountry !== 'ALL' ? newCountry : '',
-      });
-    }
+    setTempCountryCode(e.target.value); // Change only the temporary value
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    // see the query to debug
-    console.log(query)
 
     if (!city.trim()) {
       alert('City name cannot be empty!');
       return;
     }
-    // Only update the query when valid
+    
+    setCountryCode(tempCountryCode);
     setQuery({
       city: city.trim(),
-      country: countryCode !== 'ALL' ? countryCode : '', // Pass empty if "ALL"
+      country: tempCountryCode !== 'ALL' ? tempCountryCode : '', // Pass empty if "ALL"
     });
   };
   
@@ -115,7 +107,7 @@ function WeatherApp() {
           className="w-full px-4 py-2 border border-gray-600 rounded mb-4 bg-gray-700 text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
         <select
-          value={countryCode}
+          value={tempCountryCode}
           onChange={handleCountryChange}
           className="w-full px-4 py-2 border border-gray-600 rounded mb-4 bg-gray-700 text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
         >
