@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import useSWR from 'swr';
 import axios from 'axios';
+import { getRainDescription, getSnowfallDescription, getCloudCoverDescription, getTimeOfDay } from '../utils/weatherUtils';
 // import react-icons
 import { FaSun, FaMoon } from "react-icons/fa";
 import { WiNightClear, WiDaySunny, WiSnow, WiThermometer, WiStrongWind, WiRain, WiCloud, WiCloudy, WiHumidity } from "react-icons/wi";
@@ -16,7 +17,7 @@ function WeatherApp() {
   
   const { data: weather, error, isValidating } = useSWR(
     query && query.city // Ensure `query.city` is non-empty
-      ? `http://localhost:3000/weather?city=${query.city}&country=${query.country}`
+      ? `http://localhost:3000/current-weather?city=${query.city}&country=${query.country}`
       : null,
     fetcher,
     {
@@ -59,45 +60,18 @@ function WeatherApp() {
       country: tempCountryCode !== 'ALL' ? tempCountryCode : '', // Pass empty if "ALL"
     });
   };
-  
-  // Time of day check
-  let timeOfDay = weather?.is_day === 1 ? "Day" : "Night";
 
-  // Rain  and snow check
-  let rainDescription = "It's not raining";
-
-  if (weather?.rain > 0 || weather?.showers > 0) {
-    const rainIntensity = Math.max(weather?.rain || 0, weather?.showers || 0);
-    if (rainIntensity < 0.2) rainDescription = "It's raining slightly";
-    else if (rainIntensity < 0.5) rainDescription = "It's raining moderately";
-    else if (rainIntensity < 1) rainDescription = "It's raining heavily";
-    else rainDescription = "It's raining very heavily";
-  }
-  // snowfall check
-  let snowfall = "";
-  
-  if (weather?.snowfall > 0) {
-    snowfall = "It's snowing";
-  }
-
-  // Cloud cover check
-  let cloudCover = "";
-
-  if (weather?.cloud_cover >= 0 && weather?.cloud_cover < 20) {
-      cloudCover = "Clear";
-  } else if (weather?.cloud_cover >= 20 && weather?.cloud_cover <= 40) {
-      cloudCover = "Partially cloudy";
-  } else if (weather?.cloud_cover > 40 && weather?.cloud_cover <= 70) {
-      cloudCover = "Mostly cloudy";
-  } else if (weather?.cloud_cover > 70 && weather?.cloud_cover <= 100) {
-      cloudCover = "Overcast";
-  }
+  // Simplified weather descriptions
+  const timeOfDay = getTimeOfDay(weather?.is_day);
+  const rainDescription = getRainDescription(weather?.rain, weather?.showers);
+  const snowfall = getSnowfallDescription(weather?.snowfall);
+  const cloudCover = getCloudCoverDescription(weather?.cloud_cover);
 
   // Render page
   return (
-    <div className="min-h-screen flex items-center justify-center scale-125 bg-gray-900 text-gray-200">
-      <div className="bg-gray-800 p-8 rounded shadow-md w-full max-w-sm">
-      <h1 className="text-xl font-bold mb-4 text-gray-100 text-center">Weather App</h1>
+    <div className="min-h-screen flex items-center justify-center scale-125 bg-white text-gray-200">
+      <div className="bg-gray-300 p-8 rounded shadow-md w-full max-w-sm">
+      <h1 className="text-xl font-bold mb-4 text-gray-700 text-center">Weather App</h1>
       <form onSubmit={handleSubmit}>
         <input
           type="text"
@@ -106,6 +80,7 @@ function WeatherApp() {
           onChange={(e) => setCity(e.target.value)}
           className="w-full px-4 py-2 border border-gray-600 rounded mb-4 bg-gray-700 text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
+        
         <select
           value={tempCountryCode}
           onChange={handleCountryChange}
@@ -117,19 +92,23 @@ function WeatherApp() {
             </option>
           ))}
         </select>
+        
         <button
           type="submit"
           className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded focus:outline-none focus:ring-2 focus:ring-blue-400"
         >
           Get Weather
         </button>
+
         {isValidating && <p className="text-green-400 mt-4">Loading...</p>}
         {error && <p className="text-red-400 mt-4">Error: {error.response?.data?.error || error.message}</p>}
+
         {/* Weather info */}
         {weather && (
           <div className="mt-4 flex flex-col items-center justify-center text-center bg-gray-700 p-6 rounded-lg shadow-lg">
             <h3 className="text-lg font-semibold text-gray-100 mb-4">Weather Details</h3>
             <div className="flex flex-col items-center gap-2 space-y-0.5">
+              
               {/* Time of day conditions */}
               <div>
                 {weather?.is_day === 0 ? (
@@ -151,6 +130,7 @@ function WeatherApp() {
                 <span><WiThermometer className='text-teal-300 text-3xl mb-0.5'/></span>
                 <span className="font-bold text-teal-300 mr-2">Temperature:</span> {weather.temperature}°C
               </p>
+
               {/* wind speed */}
               <p className='flex items-center'>
                 <span><WiStrongWind className='text-blue-300 text-3xl mr-1 mb-1'/></span>
@@ -163,6 +143,7 @@ function WeatherApp() {
                 <span className="font-bold text-yellow-300 mr-2">
                   Relative humidity: </span> {weather.relative_humidity}
               </p>
+              
               {/* cloudy weather conditions */}
               <p className="flex items-center">
                 <span className="text-pink-500 mr-0.5">
@@ -178,6 +159,7 @@ function WeatherApp() {
                 </span>
                 <span className="font-bold text-pink-500 mr-2">Cloud cover:</span> {cloudCover}
               </p>
+
               {/* rain conditions */}
               <div>
                 {/* Render only if there's rain or snow */}
