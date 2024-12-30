@@ -16,6 +16,18 @@ app.use('*', cors({
   credentials: true,
 }))
 
+app.get('/country-codes', async (c) => {
+  const countryCodes = [
+    { code: "ALL", name: "All"},
+    { code: "US", name: "United States" },
+    { code: "BG", name: "Bulgaria" },
+    { code: "DE", name: "Germany" },
+    { code: "FR", name: "France" },
+    // Add more country codes
+  ];
+  return c.json(countryCodes);
+});
+
 app.get('/weather', async (c) => {
   // Extract query parameters
   const city = c.req.query("city")?.trim().toLocaleLowerCase();
@@ -26,13 +38,17 @@ app.get('/weather', async (c) => {
     return c.json({ error: "City name cannot be empty!" }, 400);
   }
 
-  const countryParam = `&countrycodes=${country}`;
+  const countryParam = country && country !== 'ALL' ? `&countrycodes=${country}` : '';
 
   const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(city)}${countryParam}`;
 
+  // Generate a unique key
+  const cacheKey = `${city.toLowerCase()}_${country ? country.toLowerCase() : 'all'}`;
+
   // Check cache
-  const cachedWeather = weatherCache.get(city, country);
+  const cachedWeather = weatherCache.get(cacheKey);
   if (cachedWeather) {
+    console.log('Serving from cache:', cachedWeather);
     return c.json(cachedWeather);
   }
 
@@ -62,7 +78,6 @@ app.get('/weather', async (c) => {
     console.log(weatherData)
     console.log(`\n\nthat's the weather data for ${city}\n`)
     console.log(url)
-    console.log(cachedWeather)
     
     // simplify the result
     const result = {
@@ -77,7 +92,8 @@ app.get('/weather', async (c) => {
     };
 
     // Cache the fetched weather data
-    weatherCache.set(city, country, result);
+    weatherCache.set(cacheKey, result);
+    console.log('Caching data for key:', cacheKey, result);
     return c.json(result);
   } catch (error) {
     console.error("Error ferching weather data: ", error);
