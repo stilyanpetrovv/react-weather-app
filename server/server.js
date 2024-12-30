@@ -21,7 +21,7 @@ app.get('/country-codes', async (c) => {
   return c.json(countryCodes);
 });
 
-app.get('/weather', async (c) => {
+app.get('/current-weather', async (c) => {
   // Extract query parameters
   const city = c.req.query("city")?.trim().toLocaleLowerCase();
   const country = c.req.query("country")?.trim().toUpperCase();
