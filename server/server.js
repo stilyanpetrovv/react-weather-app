@@ -3,10 +3,22 @@ import { serve } from '@hono/node-server';
 import { cors } from 'hono/cors'
 import fetch from "node-fetch";
 import NodeCache from 'node-cache';
+import { rateLimiter } from "hono-rate-limiter";
 import countryCodes from './data/countryCodes.js';
 
 const app = new Hono();
 const weatherCache = new NodeCache({ stdTTL: 120 }); // Cache TTL of 2 minutes (120 seconds)
+// custom key generator for rate limiting using user's IP 
+const keyGenerator = (c) => {
+  // Extract the "X-Forwarded-For" header
+  const xForwardedFor = c.req.header('x-forwarded-for');
+  // If multiple IPs are listed, take the first one (original client)
+  const realIp = xForwardedFor?.split(',')[0].trim();
+  // Fallback to direct IP if "X-Forwarded-For" is not present
+  const ipAddress = realIp || c.req.ip || 'unknown';
+
+  return ipAddress;
+};
 
 app.use('*', cors({
   origin: 'http://localhost:5173',
@@ -16,6 +28,19 @@ app.use('*', cors({
   maxAge: 600,
   credentials: true,
 }))
+
+// rate limiting
+app.use(
+  rateLimiter({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    limit: 100, // Limit each IP to 100 requests per window
+    standardHeaders: "draft-6",
+    keyGenerator,
+    onLimitExceeded: (c) => {
+      return c.text('Rate limit exceeded. Try again later.', 429);
+    },
+  })
+);
 
 app.get('/country-codes', async (c) => {
   return c.json(countryCodes);
