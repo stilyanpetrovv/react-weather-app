@@ -10,9 +10,11 @@ const fetcher = (url) => axios.get(url).then((res) => res.data);
 
 function WeatherApp() {
   const [city, setCity] = useState('');
+  const [tempCity, setTempCity] = useState('');
   const [countryCodes, setCountryCodes] = useState([]);
   const [countryCode, setCountryCode] = useState('ALL');
   const [tempCountryCode, setTempCountryCode] = useState('ALL'); // Temporary storage for dropdown selection
+  const [showForecast, setShowForecast] = useState(false);
   const [query, setQuery] = useState(null);
   
   const { data: weather, error, isValidating } = useSWR(
@@ -25,6 +27,32 @@ function WeatherApp() {
       dedupingInterval: 120000, // Cache for 2 minutes
     }
   );
+
+    // Forecast SWR hook with proper configuration
+  const { 
+    data: forecast, 
+    error: forecastError,
+    isValidating: isForecastLoading 
+  } = useSWR(
+    showForecast && query?.city 
+      ? `/daily-weather?city=${query.city}&country=${query.country}`
+      : null,
+    fetcher,
+    {
+      revalidateOnFocus: false,
+      dedupingInterval: 120000, // 2 minute cache
+    }
+  );
+
+  // Reset forecast when city changes
+  useEffect(() => {
+    setShowForecast(false);
+  }, [query?.city]);
+
+  // Forecast button handler
+  const handleForecastClick = () => {
+    setShowForecast(!showForecast); // Toggle forecast visibility
+  };
 
   //fetch country code dynamically from backend
   useEffect(() => {
@@ -48,7 +76,6 @@ function WeatherApp() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-
     if (!city.trim()) {
       alert('City name cannot be empty!');
       return;
@@ -59,6 +86,8 @@ function WeatherApp() {
       city: city.trim(),
       country: tempCountryCode !== 'ALL' ? tempCountryCode : '', // Pass empty if "ALL"
     });
+    setCity("");
+    setTempCity(city)
   };
 
   // Simplified weather descriptions
@@ -106,7 +135,7 @@ function WeatherApp() {
         {/* Weather info */}
         {weather && (
           <div className="mt-4 flex flex-col items-center justify-center text-center bg-gray-700 p-6 rounded-lg shadow-lg">
-            <h3 className="text-lg font-semibold text-gray-100 mb-4">Weather Details</h3>
+            <h3 className="text-lg font-semibold text-gray-100 mb-4">Weather Details for {tempCity.toUpperCase()}</h3>
             <div className="flex flex-col items-center gap-2 space-y-0.5">
               
               {/* Time of day conditions */}
@@ -183,9 +212,62 @@ function WeatherApp() {
             </div>
         </div>
       )}
+        <button
+            type="button"
+            onClick={handleForecastClick}
+            className="mt-4 w-full bg-gray-800 hover:bg-gray-900 text-white py-2 px-4 rounded-lg transition-colors duration-200"
+          >
+            {showForecast ? 'Hide' : 'Show'} 7-Day Forecast
+        </button>
        </form>
       </div>
-    </div>
+      {/* Forecast Display */}
+      {showForecast && (
+          <div className="mt-6">
+            {isForecastLoading && (
+              <div className="p-4 bg-blue-50 rounded-lg">
+                <p className="text-blue-600">Loading forecast...</p>
+              </div>
+            )}
+
+            {forecastError && (
+              <div className="p-4 bg-red-50 rounded-lg">
+                <p className="text-red-600">Forecast error: {forecastError.message}</p>
+              </div>
+            )}
+
+{forecast?.date?.length > 0 && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {forecast.date.map((date, index) => (
+                  <div key={date} className="bg-white p-4 rounded-lg shadow">
+                    <h3 className="font-bold text-gray-800 mb-2">
+                      {new Date(date).toLocaleDateString('en-US', {
+                        weekday: 'short',
+                        month: 'short',
+                        day: 'numeric'
+                      })}
+                    </h3>
+                    <div className="space-y-1 text-sm">
+                      <p className="flex justify-between">
+                        <span className="text-red-500">High:</span>
+                        <span>{forecast.temperature_max[index]}°C</span>
+                      </p>
+                      <p className="flex justify-between">
+                        <span className="text-blue-500">Low:</span>
+                        <span>{forecast.temperature_min[index]}°C</span>
+                      </p>
+                      <p className="flex justify-between">
+                        <span className="text-gray-600">Wind:</span>
+                        <span>{forecast.wind_speed_10m_max[index]} km/h</span>
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
   );
 }
 

@@ -126,7 +126,7 @@ app.get('/daily-weather', async (c) => {
   const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(city)}${countryParam}`;
 
   // Generate a unique key
-  const cacheKey = `${city.toLowerCase()}_${country ? country.toLowerCase() : 'all'}`;
+  const cacheKey = `daily_${city.toLowerCase()}_${country ? country.toLowerCase() : 'all'}`;
 
   // Check cache
   const cachedWeather = weatherCache.get(cacheKey);
@@ -148,7 +148,7 @@ app.get('/daily-weather', async (c) => {
     const { lat, lon } = geoData[0]; // Extract latitude and longitude
     
     const dailyWeatherResponce = await fetch(
-      `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&hourly=temperature_2m&daily=weather_code,temperature_2m_max,temperature_2m_min,rain_sum,showers_sum,snowfall_sum,wind_speed_10m_max`
+      `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&timezone=auto&forecast_days=7&daily=temperature_2m_max,temperature_2m_min,rain_sum,showers_sum,snowfall_sum,wind_speed_10m_max`
     );
 
     if (!dailyWeatherResponce.ok) {
@@ -157,15 +157,19 @@ app.get('/daily-weather', async (c) => {
 
     const dailyWeatherData = await dailyWeatherResponce.json();
 
+    if (!dailyWeatherData.daily || !dailyWeatherData.daily.time) {
+      console.error("Unexpected API response structure: ", dailyWeatherData);
+      return c.json({ error: "Weather API returned invalid data format" }, 500);
+    }
+
     const dailyResult = {
+      date: dailyWeatherData.daily.time,
       temperature_max: dailyWeatherData.daily.temperature_2m_max,
       temperature_min: dailyWeatherData.daily.temperature_2m_min,
-      // windspeed: currentWeatherData.current.wind_speed_10m,
-      // relative_humidity: currentWeatherData.current.relative_humidity_2m,
-      // cloud_cover: currentWeatherData.current.cloud_cover,
-      // rain: currentWeatherData.current.rain,
-      // showers: currentWeatherData.current.showers,
-      // snowfall: currentWeatherData.current.snowfall,
+      wind_speed_10m_max: dailyWeatherData.daily.wind_speed_10m_max,
+      rain_sum: dailyWeatherData.daily.rain_sum,
+      showers_sum: dailyWeatherData.daily.showers_sum,
+      snowfall_sum: dailyWeatherData.daily.snowfall_sum,
     };
 
     console.log(dailyResult);
@@ -173,7 +177,7 @@ app.get('/daily-weather', async (c) => {
     // Cache the fetched weather data
     weatherCache.set(cacheKey, dailyResult);
     console.log('Caching data for key:', cacheKey, dailyResult);
-    return c.json(result);
+    return c.json(dailyResult);
   } catch (error) {
     console.error("Error ferching weather data: ", error);
     return c.json({ error: "Internal server error." }, 500);
