@@ -28,14 +28,18 @@ function WeatherApp() {
     }
   );
 
+    // Determine which city to use for forecast (from input, tempCity, or query)
+  const forecastCity = city.trim() || tempCity || query?.city || '';
+  const forecastCountry = tempCountryCode !== 'ALL' ? tempCountryCode : (query?.country || '');
+
     // Forecast SWR hook with proper configuration
   const { 
     data: forecast, 
     error: forecastError,
     isValidating: isForecastLoading 
   } = useSWR(
-    showForecast && query?.city 
-      ? `/daily-weather?city=${query.city}&country=${query.country}`
+    showForecast && forecastCity
+      ? `http://localhost:3000/daily-weather?city=${forecastCity}&country=${forecastCountry}`
       : null,
     fetcher,
     {
@@ -44,10 +48,12 @@ function WeatherApp() {
     }
   );
 
-  // Reset forecast when city changes
+  // Reset forecast when city changes (only if forecast was showing)
   useEffect(() => {
-    setShowForecast(false);
-  }, [query?.city]);
+    if (showForecast) {
+      // Keep forecast visible but it will refetch with new city
+    }
+  }, [city, query?.city]);
 
   // Forecast button handler
   const handleForecastClick = () => {
@@ -237,10 +243,10 @@ function WeatherApp() {
             )}
 
 {forecast?.date?.length > 0 && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-2 gap-4">
                 {forecast.date.map((date, index) => (
-                  <div key={date} className="bg-white p-4 rounded-lg shadow">
-                    <h3 className="font-bold text-gray-800 mb-2">
+                  <div key={date} className="bg-white p-4 rounded-lg shadow min-w-[200px]">
+                    <h3 className="font-bold text-indigo-800 mb-2">
                       {new Date(date).toLocaleDateString('en-US', {
                         weekday: 'short',
                         month: 'short',
@@ -250,15 +256,15 @@ function WeatherApp() {
                     <div className="space-y-1 text-sm">
                       <p className="flex justify-between">
                         <span className="text-red-500">High:</span>
-                        <span>{forecast.temperature_max[index]}°C</span>
+                        <span className="text-indigo-800">{forecast.temperature_max[index]}°C</span>
                       </p>
                       <p className="flex justify-between">
                         <span className="text-blue-500">Low:</span>
-                        <span>{forecast.temperature_min[index]}°C</span>
+                        <span className="text-indigo-800">{forecast.temperature_min[index]}°C</span>
                       </p>
                       <p className="flex justify-between">
                         <span className="text-gray-600">Wind:</span>
-                        <span>{forecast.wind_speed_10m_max[index]} km/h</span>
+                        <span className="text-indigo-800">{forecast.wind_speed_10m_max[index]} km/h</span>
                       </p>
                     </div>
                   </div>
